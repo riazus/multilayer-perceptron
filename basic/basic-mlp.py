@@ -19,8 +19,8 @@ def sigmoid_derivative(output):
 
 def backpropagate(nn, inputs, expected):
     # Forward pass to store activations
-    hidden_output1 = [neuron.forward(inputs) for neuron in nn.hidden_layer1]
-    hidden_output2 = [neuron.forward(hidden_output1) for neuron in nn.hidden_layer2]
+    hidden_output1 = [neuron.forward(inputs) for neuron in nn.input_layer]
+    hidden_output2 = [neuron.forward(hidden_output1) for neuron in nn.hidden_layer]
     output = nn.output_neuron.forward(hidden_output2)
 
     # Backward pass: Calculate deltas
@@ -37,22 +37,22 @@ def backpropagate(nn, inputs, expected):
         for i, error in enumerate(hidden2_errors)
     ]
 
-    # Hidden Layer 1
-    hidden1_errors = [
-        sum(hidden2_deltas[j] * nn.hidden_layer2[j].weights[i]
-            for j in range(len(nn.hidden_layer2)))
-        for i in range(len(nn.hidden_layer1))
+    # Output Layer
+    input_errors = [
+        sum(hidden2_deltas[j] * nn.hidden_layer[j].weights[i]
+            for j in range(len(nn.hidden_layer)))
+        for i in range(len(nn.input_layer))
     ]
-    hidden1_deltas = [
+    input_deltas = [
         error * sigmoid_derivative(hidden_output1[i])
-        for i, error in enumerate(hidden1_errors)
+        for i, error in enumerate(input_errors)
     ]
 
     # Gradients for each layer
     gradients = {
         "output_neuron": (output_delta, hidden_output2),
-        "hidden_layer2": [(hidden2_deltas[i], hidden_output1) for i in range(len(nn.hidden_layer2))],
-        "hidden_layer1": [(hidden1_deltas[i], inputs) for i in range(len(nn.hidden_layer1))],
+        "hidden_layer": [(hidden2_deltas[i], hidden_output1) for i in range(len(nn.hidden_layer))],
+        "input_layer": [(input_deltas[i], inputs) for i in range(len(nn.input_layer))],
     }
 
     return gradients
@@ -80,11 +80,11 @@ def main():
 			gradients = backpropagate(nn, inputs, expected)
 
 			# 4. Update weights using gradient descent
-			for neuron, (delta, inputs) in zip(nn.hidden_layer1, gradients["hidden_layer1"]):
+			for neuron, (delta, inputs) in zip(nn.input_layer, gradients["input_layer"]):
 				neuron.weights = update_weights(neuron.weights, [delta * i for i in inputs], learning_rate)
 				neuron.bias -= learning_rate * delta
 
-			for neuron, (delta, inputs) in zip(nn.hidden_layer2, gradients["hidden_layer2"]):
+			for neuron, (delta, inputs) in zip(nn.hidden_layer, gradients["hidden_layer"]):
 				neuron.weights = update_weights(neuron.weights, [delta * i for i in inputs], learning_rate)
 				neuron.bias -= learning_rate * delta
 
