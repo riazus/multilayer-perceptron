@@ -1,40 +1,43 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+import numpy as np
 
+def minmax(X):
+    min = np.min(X, axis=0)
+    max = np.max(X, axis=0)
+    return (X - min) / ((max - min) + 1e-15)
 
 def main():
-	data = pd.read_csv('mini-data.csv', header=None)
-	data = data.drop(columns=0)
-	data[1] = data[1].map({'M': 1, 'B': 0})
+    val_size = 0.2
+    train_size = 0.6
+    df = pd.read_csv('data.csv', header=None)
 
-	X = data.drop(columns=1)
-	y = data[1]
-	X_train, X_test, y_train, y_test = train_test_split(
-		X, y,
-		test_size=0.2,
-		stratify=y,
-		random_state=42,
-		shuffle=True
-	)
+    # remove first IDs column
+    df = df.drop(columns=[0])
+    df.columns = range(df.shape[1])
 
-	# Normalize features using standardization
-	scaler = StandardScaler()
-	X_train = pd.DataFrame(scaler.fit_transform(X_train), columns=X.columns)
-	X_test = pd.DataFrame(scaler.transform(X_test), columns=X.columns)
+    # remove invalid rows
+    df.replace(0, np.nan, inplace=True)
+    df.dropna(inplace=True)
 
-	# Combine labels with normalized features
-	train_dataset = pd.concat([y_train.reset_index(drop=True), X_train], axis=1)
-	test_dataset = pd.concat([y_test.reset_index(drop=True), X_test], axis=1)
+    df[0] = df[0].map({'B': 0, 'M': 1})
 
-	# Save to CSV files
-	train_dataset.to_csv('training-dataset.csv', index=False)
-	test_dataset.to_csv('test-dataset.csv', index=False)
+    y = df.iloc[:, 0].to_frame()
+    X = df.drop(columns=[0])
+    X.columns = range(X.shape[1])
+    X = minmax(X)
 
-	print("Preprocessing complete!")
-	print(f"Training samples: {len(train_dataset)}")
-	print(f"Test samples: {len(test_dataset)}")
+    prepared_df = pd.concat([y, X], axis=1)
+    n = len(prepared_df)
+    train_end = int(n * train_size)
+    val_end = int(n * (train_size + val_size))
 
+    train = prepared_df.iloc[:train_end, :]
+    val = prepared_df.iloc[train_end:val_end, :]
+    test = prepared_df.iloc[val_end:, :]
 
-if __name__ == "__main__":
-	main()
+    train.to_csv("train-dataset.csv", index=False, header=False)
+    val.to_csv("val-dataset.csv", index=False, header=False)
+    test.to_csv("test-dataset.csv", index=False, header=False)
+
+if __name__ == '__main__':
+    main()
