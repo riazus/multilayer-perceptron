@@ -2,7 +2,7 @@ from Neuron import Neuron
 
 
 class NeuralNetwork:
-	def __init__(self):
+	def __init__(self, layers = [[]]):
         # Input -> Output Layer (2 neurons)
 		self.input_layer = [Neuron(2), Neuron(2)]  # 2 inputs -> 2 neurons
 
