@@ -2,13 +2,28 @@ import math
 import argparse
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from NeuralNetwork import NeuralNetwork
 
 def sigmoid(Z):
 	Z = np.clip(Z, -500, 500)
 	return 1 / (1 + np.exp(-Z))
 
+def binary_cross_entropy(y_true, y_pred):
+	epsilon = 1e-15
+	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+	m = y_true.shape[0]
+	loss = - 1 / m * np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+	return loss
+
+def get_accuracy(y_pred, y_true):
+    if len(y_pred.shape) == 1:
+        raise ValueError("get_accuracy(): parameters have invalid shape: (m,)")
+    if y_pred.shape[1] == 1:
+        predictions = (y_pred >= 0.5).astype(int)
+        return np.mean(predictions == y_true.reshape(-1, 1))
+    else:
+        predictions = np.argmax(y_pred, axis=1)
+        return np.mean(predictions == y_true)
 
 def softmax(Z):
 	assert len(Z.shape) == 2
@@ -57,11 +72,6 @@ def feed_forward(X, W, b):
 	a = X
 
 	for i in range(len(W) - 1):
-		print(a)
-		print("--------")
-		print(W[i])
-		print("--------")
-		print(b[i])
 		z = np.dot(a, W[i]) + b[i]
 		a = sigmoid(z)
 		A.append(a)
@@ -95,18 +105,24 @@ def init(layers):
 
 
 def main(layers, epochs, learning_rate, batch_size):
-	weights, biases = init(layers)
-	data = pd.read_csv('training-dataset.csv', header=None)
+	train_losses = []
+	val_losses = []
+	train_accuracies = []
+	val_accuracies = []
 
-	X = data.drop(columns=0)
-	y = data[0]
-	X_train, X_val, y_train, y_val = train_test_split(
-		X, y,
-		test_size=0.2,
-		stratify=y,
-		random_state=42,
-		shuffle=True
-	)
+	train_dataset = pd.read_csv('train-dataset.csv', header=None)
+	val_dataset = pd.read_csv('val-dataset.csv', header=None)
+
+	X_train = train_dataset.iloc[:, 1:]
+	y_train = train_dataset.iloc[:, 0].values.ravel()
+	X_val = val_dataset.iloc[:, 1:]
+	y_val = val_dataset.iloc[:, 0].values.ravel()
+
+	input_layer_size = X_train.shape[1]
+	output_layer_size = 2 # TODO: should be configurable
+	layer_sizes = [input_layer_size] + layers + [output_layer_size]
+
+	weights, biases = init(layer_sizes)
 
 	for epoch in range(epochs):
 		for i in range(0, len(X_train), batch_size):
@@ -117,6 +133,28 @@ def main(layers, epochs, learning_rate, batch_size):
 			dWeights, dBiases = back_propagate(batch_X, batch_y, output, A, weights)
 			# TODO: Update weigths and biases
 			index_learning_rate(learning_rate, weights, biases, dWeights, dBiases)
+		
+		train_output, _ = feed_forward(X_train, weights, biases)
+		val_output, _ = feed_forward(X_val, weights, biases)
+
+		train_loss = binary_cross_entropy(y_train, train_output)
+		val_loss = binary_cross_entropy(y_val, val_output)
+
+		train_accuracy = get_accuracy(train_output, y_train)
+		val_accuracy = get_accuracy(val_output, y_val)
+
+		train_losses.append(train_loss)
+		val_losses.append(val_loss)
+		train_accuracies.append(train_accuracy)
+		val_accuracies.append(val_accuracy)
+
+		print(f"epoch {epoch+1}/{epochs}"
+                  f"- loss: {train_loss:.4f}"
+                  f"- val_loss: {val_loss:.4f}"
+                  f"- acc: {train_accuracy:.4f}"
+                  f"- val_acc: {val_accuracy:.4f}")
+		
+	return weights, biases
 
 
 
@@ -126,21 +164,24 @@ if __name__ == "__main__":
 		description='Train MLP on training-dataset.csv')
     
     parser.add_argument('--layer', 
-                        nargs='+', type=int,
                         help='Layers and count of neurons in format: "24 24 24". By default "24 24 24"', 
+                        nargs='+', type=int,
                         default=[24, 24, 24],
                         required=False)
     parser.add_argument('--epochs', 
                         help='Count of the epochs. By default "80"',
+						type=int,
                         default=80,
                         required=False)
     parser.add_argument('--learning_rate', 
                         help='Learning rate. By default 0.01',
-                        default=0.01,
+                        type=float,
+						default=0.01,
                         required=False)
     parser.add_argument('--batch_size', 
                         help='Feature count in batch. By default 8',
-                        default=8,
+                        type=int,
+						default=8,
                         required=False)
 
     args = parser.parse_args()
