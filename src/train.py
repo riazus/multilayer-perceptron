@@ -1,19 +1,10 @@
-import math
 import argparse
 import numpy as np
 import pandas as pd
-from NeuralNetwork import NeuralNetwork
 
 def sigmoid(Z):
 	Z = np.clip(Z, -500, 500)
 	return 1 / (1 + np.exp(-Z))
-
-def binary_cross_entropy(y_true, y_pred):
-	epsilon = 1e-15
-	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
-	m = y_true.shape[0]
-	loss = - 1 / m * np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-	return loss
 
 def get_accuracy(y_pred, y_true):
     if len(y_pred.shape) == 1:
@@ -131,14 +122,13 @@ def main(layers, epochs, learning_rate, batch_size):
 
 			output, A = feed_forward(batch_X, weights, biases)
 			dWeights, dBiases = back_propagate(batch_X, batch_y, output, A, weights)
-			# TODO: Update weigths and biases
 			index_learning_rate(learning_rate, weights, biases, dWeights, dBiases)
 		
 		train_output, _ = feed_forward(X_train, weights, biases)
 		val_output, _ = feed_forward(X_val, weights, biases)
 
-		train_loss = binary_cross_entropy(y_train, train_output)
-		val_loss = binary_cross_entropy(y_val, val_output)
+		train_loss = sparse_categorical_cross_entropy(y_train, train_output)
+		val_loss = sparse_categorical_cross_entropy(y_val, val_output)
 
 		train_accuracy = get_accuracy(train_output, y_train)
 		val_accuracy = get_accuracy(val_output, y_val)
@@ -149,10 +139,10 @@ def main(layers, epochs, learning_rate, batch_size):
 		val_accuracies.append(val_accuracy)
 
 		print(f"epoch {epoch+1}/{epochs}"
-                  f"- loss: {train_loss:.4f}"
-                  f"- val_loss: {val_loss:.4f}"
-                  f"- acc: {train_accuracy:.4f}"
-                  f"- val_acc: {val_accuracy:.4f}")
+                  f" - loss: {train_loss:.4f}"
+                  f" - val_loss: {val_loss:.4f}"
+                  f" - acc: {train_accuracy:.4f}"
+                  f" - val_acc: {val_accuracy:.4f}")
 		
 	return weights, biases
 
