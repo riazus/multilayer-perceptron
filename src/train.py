@@ -1,6 +1,60 @@
 import argparse
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
+
+class Scaler:
+    def __init__(self, method="z_score"):
+        self.method = method
+        self.mean = None
+        self.scale = None
+        self.min = None
+        self.max = None
+    
+    def fit(self, X):
+            self.mean = np.mean(X, axis=0)
+            self.scale = np.std(X, axis=0)
+            self.min = np.min(X, axis=0)
+            self.max = np.max(X, axis=0)
+
+    def transform(self, X):
+        if self.method == "z_score":
+            if self.mean is None or self.scale is None:
+                raise RuntimeError("You must fit the scaler before transforming data")
+            return (X - self.mean) / (self.scale + 1e-15)
+        elif self.method == 'minmax':
+            if self.min is None or self.max is None:
+                raise RuntimeError("You must fit the scaler before transforming data.")
+            return (X - self.min) / ((self.max - self.min) + 1e-15)
+        else:
+            raise ValueError("Method must be either 'z_score' or 'minmax'.")
+    
+    def fit_transform(self, X):
+        self.fit(X)
+        return self.transform(X)
+
+
+def plot_learning_curves(train_losses, val_losses, train_accuracies, val_accuracies):
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5))
+    
+    ax1.plot(train_losses, label='training Loss')
+    ax1.plot(val_losses, label='validation Loss')
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Learning Curves - Loss')
+    ax1.legend()
+
+    ax2.plot(train_accuracies, label='train acc')
+    ax2.plot(val_accuracies, label='validation acc')
+    ax2.set_xlabel('Epochs')
+    ax2.set_ylabel('Accuracy')
+    ax2.set_title('Learning Curves - Accuracy')
+    ax2.legend()
+
+    plt.tight_layout()
+    plt.show()
+
 
 def sigmoid(Z):
 	Z = np.clip(Z, -500, 500)
@@ -101,13 +155,22 @@ def main(layers, epochs, learning_rate, batch_size):
 	train_accuracies = []
 	val_accuracies = []
 
-	train_dataset = pd.read_csv('train-dataset.csv', header=None)
-	val_dataset = pd.read_csv('val-dataset.csv', header=None)
+	# train_dataset = pd.read_csv('train-dataset.csv', header=None)
+	# val_dataset = pd.read_csv('val-dataset.csv', header=None)
 
-	X_train = train_dataset.iloc[:, 1:]
-	y_train = train_dataset.iloc[:, 0].values.ravel()
-	X_val = val_dataset.iloc[:, 1:]
-	y_val = val_dataset.iloc[:, 0].values.ravel()
+	# X_train = train_dataset.iloc[:, 1:]
+	# y_train = train_dataset.iloc[:, 0].values.ravel()
+	# X_val = val_dataset.iloc[:, 1:]
+	# y_val = val_dataset.iloc[:, 0].values.ravel()
+	X_train = pd.read_csv('train/X_train.csv', header=None)
+	y_train = pd.read_csv('train/y_train.csv', header=None).values.ravel()
+
+	X_val = pd.read_csv("val/X_val.csv", header=None)
+	y_val = pd.read_csv("val/y_val.csv", header=None).values.ravel()
+
+	scaler = Scaler()
+	X_train = scaler.fit_transform(X_train)
+	X_val = scaler.transform(X_val)
 
 	input_layer_size = X_train.shape[1]
 	output_layer_size = 2 # TODO: should be configurable
@@ -122,7 +185,7 @@ def main(layers, epochs, learning_rate, batch_size):
 
 			output, A = feed_forward(batch_X, weights, biases)
 			dWeights, dBiases = back_propagate(batch_X, batch_y, output, A, weights)
-			index_learning_rate(learning_rate, weights, biases, dWeights, dBiases)
+			weights, biases = index_learning_rate(learning_rate, weights, biases, dWeights, dBiases)
 		
 		train_output, _ = feed_forward(X_train, weights, biases)
 		val_output, _ = feed_forward(X_val, weights, biases)
@@ -143,7 +206,8 @@ def main(layers, epochs, learning_rate, batch_size):
                   f" - val_loss: {val_loss:.4f}"
                   f" - acc: {train_accuracy:.4f}"
                   f" - val_acc: {val_accuracy:.4f}")
-		
+	
+	plot_learning_curves(train_losses, val_losses, train_accuracies, val_accuracies)
 	return weights, biases
 
 
@@ -166,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', 
                         help='Learning rate. By default 0.01',
                         type=float,
-						default=0.01,
+						default=0.0314,
                         required=False)
     parser.add_argument('--batch_size', 
                         help='Feature count in batch. By default 8',
