@@ -29,6 +29,7 @@ def sigmoid(Z):
 	Z = np.clip(Z, -500, 500)
 	return 1 / (1 + np.exp(-Z))
 
+
 def get_accuracy(y_pred, y_true):
     if len(y_pred.shape) == 1:
         raise ValueError("get_accuracy(): parameters have invalid shape: (m,)")
@@ -38,6 +39,7 @@ def get_accuracy(y_pred, y_true):
     else:
         predictions = np.argmax(y_pred, axis=1)
         return np.mean(predictions == y_true)
+
 
 def softmax(Z):
 	assert len(Z.shape) == 2
@@ -60,46 +62,49 @@ def he_uniform(input_size, output_size):
 	return weight
 
 
-def back_propagate(X, y, output, A, W):
+def back_propagate(X, y, output, activation_outputs, weights):
 	m = X.shape[0]
-	dW, db = [], []
-	dz = output.copy()
-	dz[np.arange(m), y] -= 1
-	dz /= m
+	weight_gradients = []
+	bias_gradients = []
+	grad_output = output.copy()
+	grad_output[np.arange(m), y] -= 1
+	grad_output /= m
 	
-	for i in reversed(range(len(W))):
-		a_prev = A[i - 1] if i > 0 else X
-		dW_i = np.dot(a_prev.T, dz)
-		db_i = np.sum(dz, axis=0, keepdims=True)
-		dW.insert(0, dW_i)
-		db.insert(0, db_i)
+	for i in reversed(range(len(weights))):
+		previous_activation = activation_outputs[i - 1] if i > 0 else X
+		weight_gradient = np.dot(previous_activation.T, grad_output)
+		bias_gradient = np.sum(grad_output, axis=0, keepdims=True)
+		weight_gradients.insert(0, weight_gradient)
+		bias_gradients.insert(0, bias_gradient)
 
 		if i > 0:
-			da = np.dot(dz, W[i].T)
-			dz = da * sigmoid(A[i - 1])
+			grad_activation = np.dot(grad_output, weights[i].T)
+			sigmoid_activation = sigmoid(activation_outputs[i - 1])
+			grad_output = grad_activation * sigmoid_activation * (1 - sigmoid_activation)
 	
-	return dW, db
+	return weight_gradients, bias_gradients
 
 
-def feed_forward(X, W, b):
-	A = []
-	a = X
+def feed_forward(X, weights, biases):
+	activation_outputs = []
+	current_activation = X
 
-	for i in range(len(W) - 1):
-		z = np.dot(a, W[i]) + b[i]
-		a = sigmoid(z)
-		A.append(a)
+	for i in range(len(weights) - 1):
+		z = np.dot(current_activation, weights[i]) + biases[i]
+		current_activation = sigmoid(z)
+		activation_outputs.append(current_activation)
 
-	z = np.dot(a, W[-1]) + b[-1]
+	z = np.dot(current_activation, weights[-1]) + biases[-1]
 	output = softmax(z)
-	return output, A
+	return output, activation_outputs
 
 
-def index_learning_rate(learning_rate, W, b, dW, db):
-	for i in range(len(W)):
-		W[i] -= learning_rate * dW[i]
-		b[i] -= learning_rate * db[i]
-	return W, b
+def index_learning_rate(learning_rate, weights, biases, 
+						weight_gradients, bias_gradients):
+	for i in range(len(weights)):
+		weights[i] -= learning_rate * weight_gradients[i]
+		biases[i] -= learning_rate * bias_gradients[i]
+	return weights, biases
 
 
 def init(layers):
@@ -130,7 +135,7 @@ def main(layers, epochs, learning_rate, batch_size):
 	y_val = pd.read_csv('processed/y_val.csv', header=None).values.ravel()
 
 	input_layer_size = X_train.shape[1]
-	output_layer_size = 2 # TODO: should be configurable
+	output_layer_size = np.unique(y_train).shape[0]
 	layer_sizes = [input_layer_size] + layers + [output_layer_size]
 
 	weights, biases = init(layer_sizes)
@@ -141,8 +146,10 @@ def main(layers, epochs, learning_rate, batch_size):
 			batch_y = y_train[i:i+batch_size]
 
 			output, A = feed_forward(batch_X, weights, biases)
-			dWeights, dBiases = back_propagate(batch_X, batch_y, output, A, weights)
-			weights, biases = index_learning_rate(learning_rate, weights, biases, dWeights, dBiases)
+			weight_gradients, bias_gradients = back_propagate(batch_X, batch_y, output, A, weights)
+			weights, biases = index_learning_rate(learning_rate, 
+													weights, biases, 
+													weight_gradients, bias_gradients)
 		
 		train_output, _ = feed_forward(X_train, weights, biases)
 		val_output, _ = feed_forward(X_val, weights, biases)
@@ -166,7 +173,6 @@ def main(layers, epochs, learning_rate, batch_size):
 	
 	plot_learning_curves(train_losses, val_losses, train_accuracies, val_accuracies)
 	return weights, biases
-
 
 
 if __name__ == "__main__":
