@@ -3,8 +3,10 @@ import numpy as np
 
 
 def save(X, y, prefix):
-    X.to_csv(f"processed/X_{prefix}.csv", index=False, header=False)
-    y.to_csv(f"processed/y_{prefix}.csv", index=False, header=False)
+    path_X = f"ressources/processed/X_{prefix}.csv"
+    path_y = f"ressources/processed/y_{prefix}.csv"
+    X.to_csv(path_X, index=False, header=False)
+    y.to_csv(path_y, index=False, header=False)
 
 
 def split_columns(df):
@@ -21,7 +23,7 @@ def z_score(X, mean, scale):
 def main():
     val_size = 0.2
     train_size = 0.6
-    df = pd.read_csv('data.csv', header=None)
+    df = pd.read_csv('ressources/raw/data.csv', header=None)
 
     # remove first IDs column
     df = df.drop(columns=[0])

@@ -25,6 +25,12 @@ def plot_learning_curves(train_losses, val_losses, train_accuracies, val_accurac
     plt.show()
 
 
+def get_processed_data(prefix):
+	X = pd.read_csv(f'ressources/processed/X_{prefix}.csv', header=None)
+	y = pd.read_csv(f'ressources/processed/y_{prefix}.csv', header=None).values.ravel()
+	return y, X
+
+
 def sigmoid(Z):
 	Z = np.clip(Z, -500, 500)
 	return 1 / (1 + np.exp(-Z))
@@ -129,10 +135,8 @@ def main(layers, epochs, learning_rate, batch_size):
 	train_accuracies = []
 	val_accuracies = []
 
-	X_train = pd.read_csv('processed/X_train.csv', header=None)
-	y_train = pd.read_csv('processed/y_train.csv', header=None).values.ravel()
-	X_val = pd.read_csv('processed/X_val.csv', header=None)
-	y_val = pd.read_csv('processed/y_val.csv', header=None).values.ravel()
+	y_train, X_train = get_processed_data("train")
+	y_val, X_val = get_processed_data("val")
 
 	input_layer_size = X_train.shape[1]
 	output_layer_size = np.unique(y_train).shape[0]
@@ -176,11 +180,8 @@ def main(layers, epochs, learning_rate, batch_size):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-		prog='Training',
-		description='Train MLP on training-dataset.csv')
-    
-    parser.add_argument('--layer', 
+    parser = argparse.ArgumentParser(prog='Training')
+    parser.add_argument('--layers', 
                         help='Layers and count of neurons in format: "24 24 24". By default "24 24 24"', 
                         nargs='+', type=int,
                         default=[24, 24, 24],
@@ -202,4 +203,4 @@ if __name__ == "__main__":
                         required=False)
 
     args = parser.parse_args()
-    main(args.layer, args.epochs, args.learning_rate, args.batch_size)
+    main(args.layers, args.epochs, args.learning_rate, args.batch_size)
