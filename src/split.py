@@ -21,7 +21,7 @@ def z_score(X, mean, scale):
 
 
 def main():
-    val_size = 0.2
+    valid_size = 0.2
     train_size = 0.6
     df = pd.read_csv('ressources/raw/data.csv', header=None)
 
@@ -37,14 +37,14 @@ def main():
 
     n = len(df)
     train_end = int(n * train_size)
-    val_end = int(n * (train_size + val_size))
+    valid_end = int(n * (train_size + valid_size))
 
     train = df.iloc[:train_end, :]
-    val = df.iloc[train_end:val_end, :]
-    test = df.iloc[val_end:, :]
+    valid = df.iloc[train_end:valid_end, :]
+    test = df.iloc[valid_end:, :]
 
     y_train, X_train = split_columns(train)
-    y_val, X_val = split_columns(val)
+    y_valid, X_valid = split_columns(valid)
     y_test, X_test = split_columns(test)
 
     mean = np.mean(X_train, axis=0)
@@ -52,11 +52,11 @@ def main():
 
     # apply z_score standardization
     X_train = z_score(X_train, mean, scale)
-    X_val = z_score(X_val, mean, scale)
+    X_valid = z_score(X_valid, mean, scale)
     X_test = z_score(X_test, mean, scale)
 
     save(X_train, y_train, "train")
-    save(X_val, y_val, "val")
+    save(X_valid, y_valid, "valid")
     save(X_test, y_test, "test")
 
 
