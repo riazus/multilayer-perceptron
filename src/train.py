@@ -4,37 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-class Scaler:
-    def __init__(self, method="z_score"):
-        self.method = method
-        self.mean = None
-        self.scale = None
-        self.min = None
-        self.max = None
-    
-    def fit(self, X):
-            self.mean = np.mean(X, axis=0)
-            self.scale = np.std(X, axis=0)
-            self.min = np.min(X, axis=0)
-            self.max = np.max(X, axis=0)
-
-    def transform(self, X):
-        if self.method == "z_score":
-            if self.mean is None or self.scale is None:
-                raise RuntimeError("You must fit the scaler before transforming data")
-            return (X - self.mean) / (self.scale + 1e-15)
-        elif self.method == 'minmax':
-            if self.min is None or self.max is None:
-                raise RuntimeError("You must fit the scaler before transforming data.")
-            return (X - self.min) / ((self.max - self.min) + 1e-15)
-        else:
-            raise ValueError("Method must be either 'z_score' or 'minmax'.")
-    
-    def fit_transform(self, X):
-        self.fit(X)
-        return self.transform(X)
-
-
 def plot_learning_curves(train_losses, val_losses, train_accuracies, val_accuracies):
     _, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 5))
     
@@ -155,22 +124,10 @@ def main(layers, epochs, learning_rate, batch_size):
 	train_accuracies = []
 	val_accuracies = []
 
-	# train_dataset = pd.read_csv('train-dataset.csv', header=None)
-	# val_dataset = pd.read_csv('val-dataset.csv', header=None)
-
-	# X_train = train_dataset.iloc[:, 1:]
-	# y_train = train_dataset.iloc[:, 0].values.ravel()
-	# X_val = val_dataset.iloc[:, 1:]
-	# y_val = val_dataset.iloc[:, 0].values.ravel()
-	X_train = pd.read_csv('train/X_train.csv', header=None)
-	y_train = pd.read_csv('train/y_train.csv', header=None).values.ravel()
-
-	X_val = pd.read_csv("val/X_val.csv", header=None)
-	y_val = pd.read_csv("val/y_val.csv", header=None).values.ravel()
-
-	scaler = Scaler()
-	X_train = scaler.fit_transform(X_train)
-	X_val = scaler.transform(X_val)
+	X_train = pd.read_csv('processed/X_train.csv', header=None)
+	y_train = pd.read_csv('processed/y_train.csv', header=None).values.ravel()
+	X_val = pd.read_csv('processed/X_val.csv', header=None)
+	y_val = pd.read_csv('processed/y_val.csv', header=None).values.ravel()
 
 	input_layer_size = X_train.shape[1]
 	output_layer_size = 2 # TODO: should be configurable
