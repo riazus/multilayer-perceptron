@@ -4,8 +4,6 @@ from utils import feed_forward, load
 
 
 def get_accuracy(y_pred, y_true):
-    if len(y_pred.shape) == 1:
-        raise ValueError("get_accuracy(): parameters have invalid shape: (m,)")
     if y_pred.shape[1] == 1:
         predictions = (y_pred >= 0.5).astype(int)
         return np.mean(predictions == y_true.reshape(-1, 1))

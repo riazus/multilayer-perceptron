@@ -28,6 +28,7 @@ def feed_forward(X, weights, biases):
 	output = softmax(z)
 	return output, activation_outputs
 
+
 def load(path):
 	try:
 		df = pd.read_csv(path, header=None)

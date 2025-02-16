@@ -128,7 +128,7 @@ def init(layers):
 	return weights, biases
 
 
-def main(layers, epochs, learning_rate, 
+def main(layers, epochs, learning_rate,
 		 batch_size, early_stop_status, patience):
 	train_losses = []
 	valid_losses = []
@@ -192,6 +192,7 @@ if __name__ == "__main__":
 			integer_value = int(value)
 			if (integer_value <= 0):
 				raise argparse.ArgumentTypeError(f"{value} must be a positive.")
+			return integer_value
 		except ValueError:
 			raise argparse.ArgumentTypeError(f"{value} must be a valid integer.")
 	
@@ -200,6 +201,7 @@ if __name__ == "__main__":
 			float_value = float(value)
 			if (float_value <= 0):
 				raise argparse.ArgumentTypeError(f"{value} must be a positive.")
+			return float_value
 		except ValueError:
 			raise argparse.ArgumentTypeError(f"{value} must be a valid float.")
 
