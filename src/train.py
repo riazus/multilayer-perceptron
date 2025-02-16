@@ -27,6 +27,36 @@ def plot_learning_curves(train_losses, valid_losses,
     plt.show()
 
 
+def get_stopper():
+	counter = 0
+	best_loss = None
+	best_epoch = None
+
+	improvement_threshold = 0.001
+	patience = 5
+	
+	def check_stopping(valid_loss, epoch):
+		nonlocal counter, best_loss, best_epoch
+
+		if best_loss is None:
+			best_loss = valid_loss
+			best_epoch = epoch
+			return False, None
+		elif valid_loss > best_loss - improvement_threshold:
+			counter += 1
+			if counter == patience:
+				return True, best_epoch + 1
+			else:
+				return False, None
+		else:
+			best_loss = valid_loss
+			best_epoch = epoch
+			counter = 0
+			return False, None
+
+	return check_stopping
+
+
 def get_processed_data(prefix):
 	X = pd.read_csv(f'ressources/processed/X_{prefix}.csv', header=None)
 	y = pd.read_csv(f'ressources/processed/y_{prefix}.csv', header=None).values.ravel()
@@ -108,6 +138,7 @@ def main(layers, epochs, learning_rate, batch_size):
 	valid_losses = []
 	train_accuracies = []
 	valid_accuracies = []
+	check_early_stopping = get_stopper()
 
 	y_train, X_train = get_processed_data("train")
 	y_valid, X_valid = get_processed_data("valid")
@@ -148,6 +179,11 @@ def main(layers, epochs, learning_rate, batch_size):
                   f" - val_loss: {valid_loss:.4f}"
                   f" - acc: {train_accuracy:.4f}"
                   f" - val_acc: {valid_accuracy:.4f}")
+
+		early_stop, best_epoch = check_early_stopping(valid_loss, epoch)
+		if (early_stop == True):
+			print(f"Early stop detected. Best epoch was: {best_epoch}.")
+			break
 	
 	print("saving model './saved_model.npy' to disk...")
 	np.save("saved_model.npy", { "weights": weights, "biases": biases })
