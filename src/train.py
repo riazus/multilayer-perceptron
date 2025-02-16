@@ -187,6 +187,33 @@ def main(layers, epochs, learning_rate,
 
 
 if __name__ == "__main__":
+	def is_positive_integer(value):
+		try:
+			integer_value = int(value)
+			if (integer_value <= 0):
+				raise argparse.ArgumentTypeError(f"{value} must be a positive.")
+		except ValueError:
+			raise argparse.ArgumentTypeError(f"{value} must be a valid integer.")
+	
+	def is_positive_float(value):
+		try:
+			float_value = float(value)
+			if (float_value <= 0):
+				raise argparse.ArgumentTypeError(f"{value} must be a positive.")
+		except ValueError:
+			raise argparse.ArgumentTypeError(f"{value} must be a valid float.")
+
+	def ensure_positive_layers(value_list):
+		if len(value_list) < 2:
+			raise argparse.ArgumentTypeError("At least 2 layers must be specified.")
+		try:
+			int_list = [int(x) for x in value_list]
+			if any(x <= 0 for x in int_list):
+				raise argparse.ArgumentTypeError("All layer sizes must be positive integers.")
+			return int_list
+		except ValueError:
+			raise argparse.ArgumentTypeError("All layer values must be valid integers.")
+
 	parser = argparse.ArgumentParser(prog='MLP Training')
 	parser.add_argument("-l", "--layers", 
 						help='Layers and count of neurons in format: "24 24 24". By default "24 24 24"', 
@@ -195,17 +222,17 @@ if __name__ == "__main__":
 						required=False)
 	parser.add_argument("-e", '--epochs', 
 						help='Count of the epochs. By default 80',
-						type=int,
+						type=is_positive_integer,
 						default=80,
 						required=False)
 	parser.add_argument("-r", '--learning_rate', 
 						help='Learning rate. By default 0.0314',
-						type=float,
+						type=is_positive_float,
 						default=0.0314,
 						required=False)
 	parser.add_argument("-s", '--batch_size', 
 						help='Feature count in batch. By default 8',
-						type=int,
+						type=is_positive_integer,
 						default=8,
 						required=False)
 	parser.add_argument('--early_stop', 
@@ -216,10 +243,11 @@ if __name__ == "__main__":
 						required=False)
 	parser.add_argument("-p", "--patience", 
 						help='Number of epochs before early stop. By default 5',
-						type=int,
+						type=is_positive_integer,
 						default=5,
 						required=False)
 
 	args = parser.parse_args()
+	ensure_positive_layers(args.layers)
 	main(args.layers, args.epochs, args.learning_rate, 
 	  args.batch_size, args.early_stop, args.patience)
