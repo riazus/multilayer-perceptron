@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from utils import feed_forward, sigmoid
+from utils import feed_forward, sigmoid, load
 
 
 def plot_learning_curves(train_losses, valid_losses, 
@@ -58,14 +58,12 @@ def get_stopper():
 
 
 def get_processed_data(prefix):
-	X = pd.read_csv(f'ressources/processed/X_{prefix}.csv', header=None)
-	y = pd.read_csv(f'ressources/processed/y_{prefix}.csv', header=None).values.ravel()
+	X = load(f'ressources/processed/X_{prefix}.csv')
+	y = load(f'ressources/processed/y_{prefix}.csv').values.ravel()
 	return y, X
 
 
 def get_accuracy(y_pred, y_true):
-    if len(y_pred.shape) == 1:
-        raise ValueError("get_accuracy(): parameters have invalid shape: (m,)")
     if y_pred.shape[1] == 1:
         predictions = (y_pred >= 0.5).astype(int)
         return np.mean(predictions == y_true.reshape(-1, 1))

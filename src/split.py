@@ -1,12 +1,12 @@
-import pandas as pd
 import numpy as np
+from utils import load, save as base_save
 
 
 def save(X, y, prefix):
     path_X = f"ressources/processed/X_{prefix}.csv"
     path_y = f"ressources/processed/y_{prefix}.csv"
-    X.to_csv(path_X, index=False, header=False)
-    y.to_csv(path_y, index=False, header=False)
+    base_save(X, path_X)
+    base_save(y, path_y)
 
 
 def split_columns(df):
@@ -23,7 +23,7 @@ def z_score(X, mean, scale):
 def main():
     valid_size = 0.2
     train_size = 0.6
-    df = pd.read_csv('ressources/raw/data.csv', header=None)
+    df = load('ressources/raw/data.csv')
 
     # remove first IDs column
     df = df.drop(columns=[0])

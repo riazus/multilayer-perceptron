@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def softmax(Z):
@@ -26,3 +27,20 @@ def feed_forward(X, weights, biases):
 	z = np.dot(current_activation, weights[-1]) + biases[-1]
 	output = softmax(z)
 	return output, activation_outputs
+
+def load(path):
+	try:
+		df = pd.read_csv(path, header=None)
+		return df
+	except Exception:
+		print(f"Error during reading csv file by the following path: {path}")
+		exit(1)
+
+
+def save(df, path, index=False, header=False):
+	try:
+		df.to_csv(path, index=index, header=header)
+	except Exception:
+		print(f"Error during saving csv file: {path}")
+		exit(1)
+	

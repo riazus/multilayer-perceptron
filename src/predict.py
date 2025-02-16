@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from utils import feed_forward
+from utils import feed_forward, load
 
 
 def get_accuracy(y_pred, y_true):
@@ -16,8 +16,8 @@ def get_accuracy(y_pred, y_true):
 
 def main():
     saved_model = np.load("saved_model.npy", allow_pickle=True).item()
-    X_test = pd.read_csv("ressources/processed/X_test.csv", header=None)
-    y_test = pd.read_csv("ressources/processed/y_test.csv", header=None).to_numpy()
+    X_test = load("ressources/processed/X_test.csv")
+    y_test = load("ressources/processed/y_test.csv").to_numpy()
 
     weights = saved_model['weights']
     biases = saved_model['biases']
@@ -36,14 +36,11 @@ def main():
     predictions = predictions.reshape(-1, 1)
     accuracy = get_accuracy(predictions, y_test)
 
-    _, counts = np.unique(predictions, return_counts=True)
-    classes = ('B', 'M')
-    
     print(f"\nSample predictions (first 15):")
     print(results.head(15))
 
-    star = "✅" if accuracy >= 0.95 else "❌"
-    print(f"Accuracy: {accuracy*100:.2f}% {star}")
+    mark = "✅" if accuracy >= 0.95 else "❌"
+    print(f"Accuracy: {accuracy*100:.2f}% {mark}")
 
 
 if __name__ == "__main__":
