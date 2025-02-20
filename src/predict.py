@@ -25,7 +25,6 @@ def main():
     print(f"\nSample predictions (first 15):")
     print(results.head(15))
 
-
     accuracy = get_accuracy(y_test, probabilities)
     mark = "✅" if accuracy >= 0.95 else "❌"
     print(f"Accuracy: {accuracy*100:.2f}% {mark}")
