@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import feed_forward, sigmoid, load
+from utils import feed_forward, sigmoid, load, get_accuracy
 
 
 def plot_learning_curves(train_losses, valid_losses, 
@@ -60,16 +60,7 @@ def get_processed_data(prefix):
 	return y, X
 
 
-def get_accuracy(y_pred, y_true):
-    if y_pred.shape[1] == 1:
-        predictions = (y_pred >= 0.5).astype(int)
-        return np.mean(predictions == y_true.reshape(-1, 1))
-    else:
-        predictions = np.argmax(y_pred, axis=1)
-        return np.mean(predictions == y_true)
-
-
-def binary_cross_entropy(y_true, y_pred):
+def sparse_categorical_cross_entropy(y_true, y_pred):
 	epsilon = 1e-15
 	m = y_true.shape[0]
 	y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
@@ -153,17 +144,17 @@ def main(layers, epochs, learning_rate,
 			output, activation_outputs = feed_forward(batch_X, weights, biases)
 			weight_gradients, bias_gradients = back_propagate(batch_X, batch_y, 
 													 output, activation_outputs, weights)
-			
+
 			optimize_parameters(learning_rate, weights, biases, weight_gradients, bias_gradients)
-		
+
 		train_output, _ = feed_forward(X_train, weights, biases)
 		valid_output, _ = feed_forward(X_valid, weights, biases)
 
-		train_loss = binary_cross_entropy(y_train, train_output)
-		valid_loss = binary_cross_entropy(y_valid, valid_output)
+		train_loss = sparse_categorical_cross_entropy(y_train, train_output)
+		valid_loss = sparse_categorical_cross_entropy(y_valid, valid_output)
 
-		train_accuracy = get_accuracy(train_output, y_train)
-		valid_accuracy = get_accuracy(valid_output, y_valid)
+		train_accuracy = get_accuracy(y_train, train_output)
+		valid_accuracy = get_accuracy(y_valid, valid_output)
 
 		train_losses.append(train_loss)
 		valid_losses.append(valid_loss)

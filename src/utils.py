@@ -2,6 +2,25 @@ import numpy as np
 import pandas as pd
 
 
+def binary_cross_entropy(y_true, y_pred):
+    epsilon = 1e-15
+    y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+    bce = - (y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
+    return np.mean(bce)
+
+
+def sparse_categorical_cross_entropy(y_true, y_pred):
+    epsilon = 1e-15
+    m = y_true.shape[0]
+    y_pred = np.clip(y_pred, epsilon, 1 - epsilon)
+    return -np.sum(np.log(y_pred[np.arange(m), y_true])) / m
+
+
+def get_accuracy(y_true, y_pred):
+	predictions = np.argmax(y_pred, axis=1)
+	return np.mean(predictions == y_true)
+
+
 def softmax(Z):
 	assert len(Z.shape) == 2
 	Z_max = np.max(Z, axis=1, keepdims=1)
